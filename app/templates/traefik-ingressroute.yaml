@@ -1,0 +1,25 @@
+{{- if and .Values.traefikIngress.enabled .Values.traefikIngress.domain }}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ include "app.name" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+  {{- with .Values.traefikIngress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  entryPoints:
+    {{- toYaml .Values.traefikIngress.entryPoints | nindent 4 }}
+  routes:
+    - match: Host(`{{ .Values.traefikIngress.domain }}`)
+      kind: Rule
+      services:
+        - name: {{ include "app.name" . }}
+          port: {{ .Values.service.port }}
+  {{- with .Values.traefikIngress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

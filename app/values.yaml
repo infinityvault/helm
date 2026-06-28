@@ -1,0 +1,170 @@
+app:
+  name: "example"
+  containerPort: 80
+  imagePullPolicy: IfNotPresent
+  labels: {}
+  podAnnotations: {}
+  imagePullSecrets: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  livenessProbe: {}
+  readinessProbe: {}
+  volumeMounts: []
+  volumes: []
+
+persistence:
+  enabled: true
+  volumeName: data
+  mountPath: /data/db
+  size: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  existingClaim: ""
+  claimName: ""
+  annotations: {}
+
+service:
+  type: ClusterIP
+  port: 80
+  annotations: {}
+
+serviceAccount:
+  create: false
+  name: ""
+  annotations: {}
+
+waitFor:
+  image: "busybox:1.36"
+  imagePullPolicy: IfNotPresent
+  ports:
+    postgres: 5432
+    mysql: 3306
+    redis: 6379
+
+statefulSet:
+  enabled: false
+  replicas: 1
+  image: "nginx"
+  # imagePullPolicy: IfNotPresent
+  # waitFor: ["postgres", "mysql", "redis"]
+  # command: []
+  # args: []
+  # env:
+  #   - name: "MY_VAR"
+  #     value: "my_value"
+  #   - name: "ANOTHER_VAR"
+  #     valueFrom:
+  #       secretKeyRef:
+  #         name: "my-secret"
+  #         key: "ANOTHERVAR"
+  # envFrom: []
+  # volumeClaimTemplates:
+  #   - metadata:
+  #       name: data
+  #     spec:
+  #       accessModes: ["ReadWriteOnce"]
+  #       resources:
+  #         requests:
+  #           storage: 5Gi
+
+deployment:
+  enabled: true
+  replicas: 1
+  image: "nginx"
+  # imagePullPolicy: IfNotPresent
+  # waitFor: ["postgres", "mysql", "redis"]
+  # command: []
+  # args: []
+  # env:
+  #   - name: "MY_VAR"
+  #     value: "my_value"
+  #   - name: "ANOTHER_VAR"
+  #     valueFrom:
+  #       secretKeyRef:
+  #         name: "my-secret"
+  #         key: "ANOTHERVAR"
+  # envFrom: []
+
+postgres:
+  enabled: false
+  name: "postgres"
+  image: "postgres:16"
+  volumeSize: "5Gi"
+  database:
+    name: "example"
+    credentialsSecretName: "example"
+    # Secret schema:
+    # DATABASE_USERNAME
+    # DATABASE_PASSWORD
+
+mysql:
+  enabled: false
+  name: "mysql"
+  image: "mysql:8"
+  volumeSize: "5Gi"
+  database:
+    name: "example"
+    credentialsSecretName: "example"
+    # Secret schema:
+    # DATABASE_USERNAME
+    # DATABASE_PASSWORD
+
+redis:
+  enabled: false
+  name: "redis"
+  image: "redis:7"
+  volumeSize: "1Gi"
+
+traefikIngress:
+  enabled: true
+  # domain: "example.com"
+  entryPoints:
+    - websecure
+  annotations: {}
+  tls: {}
+
+dataProtection:
+  enabled: true
+  image: "ghcr.io/infinityvault/restic-backup:latest"
+  imagePullPolicy: IfNotPresent
+  # repositorySecretName should contain all restic-backup environment variables
+  # such as RESTIC_REPOSITORY and RESTIC_PASSWORD.
+  repositorySecretName: ""
+  env: []
+  envFrom: []
+  # Leave empty to mount persistence.volumeName at persistence.mountPath.
+  volumeMounts: []
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"
+    notifications:
+      enabled: true
+      mode: "on_failure"
+
+  restore:
+    enabled: true
+    checkPath: "/data/db"
+    # beforeTimestamp: "2024-01-01"
+    notifications:
+      enabled: true
+      mode: "always"
+
+  cleanup:
+    enabled: true
+    schedule: "0 3 * * *"
+    keepDaily: 7
+    keepWeekly: 4
+    # keepHourly: 24
+    # keepMonthly: 6
+    # keepYearly: 2
+    notifications:
+      enabled: true
+      mode: "on_failure"

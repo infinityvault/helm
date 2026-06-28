@@ -1,0 +1,80 @@
+{{- if and .Values.dataProtection.enabled .Values.dataProtection.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "app.name" . }}-backup
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.dataProtection.backup.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.dataProtection.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.dataProtection.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "app.selectorLabels" . | nindent 12 }}
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ include "app.serviceAccountName" . }}
+          containers:
+            - name: backup
+              image: {{ .Values.dataProtection.image | quote }}
+              imagePullPolicy: {{ .Values.dataProtection.imagePullPolicy }}
+              command: ["restic-backup"]
+              args: ["backup"]
+              {{- with (include "app.resticEnv" .) }}
+              env:
+{{ . | nindent 16 }}
+              {{- end }}
+              {{- with (include "app.resticEnvFrom" .) }}
+              envFrom:
+{{ . | nindent 16 }}
+              {{- end }}
+              {{- with (include "app.dataProtectionVolumeMounts" .) }}
+              volumeMounts:
+{{ . | nindent 16 }}
+              {{- end }}
+          {{- with (include "app.volumes" .) }}
+          volumes:
+{{ . | nindent 12 }}
+          {{- end }}
+---
+{{- end }}
+{{- if and .Values.dataProtection.enabled .Values.dataProtection.cleanup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "app.name" . }}-cleanup
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.dataProtection.cleanup.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.dataProtection.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.dataProtection.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "app.selectorLabels" . | nindent 12 }}
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ include "app.serviceAccountName" . }}
+          containers:
+            - name: cleanup
+              image: {{ .Values.dataProtection.image | quote }}
+              imagePullPolicy: {{ .Values.dataProtection.imagePullPolicy }}
+              command: ["sh", "-ec"]
+              args:
+                - restic-backup cleanup{{ include "app.cleanupFlags" . }}
+              {{- with (include "app.resticEnv" .) }}
+              env:
+{{ . | nindent 16 }}
+              {{- end }}
+              {{- with (include "app.resticEnvFrom" .) }}
+              envFrom:
+{{ . | nindent 16 }}
+              {{- end }}
+{{- end }}
