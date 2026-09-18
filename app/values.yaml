@@ -130,7 +130,7 @@ traefikIngress:
 
 dataProtection:
   enabled: false
-  image: "ghcr.io/infinityvault/restic-backup:0.1.3"
+  image: "ghcr.io/infinityvault/restic-backup:0.1.4"
   imagePullPolicy: IfNotPresent
   # repositorySecretName should contain all restic-backup environment variables
   # such as RESTIC_REPOSITORY and RESTIC_PASSWORD.
