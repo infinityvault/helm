@@ -168,3 +168,10 @@ dataProtection:
     notifications:
       enabled: true
       mode: "on_failure"
+
+  # A CronJob that's never scheduled (suspended) - it exists only as a
+  # template for `kubectl create job --from=cronjob/<release>-debug` to
+  # get an on-demand shell with the same image/env/mounts as
+  # backup/restore/cleanup, for poking at the restic repository by hand.
+  debug:
+    enabled: true

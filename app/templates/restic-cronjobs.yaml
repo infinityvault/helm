@@ -78,3 +78,55 @@ spec:
 {{ . | nindent 16 }}
               {{- end }}
 {{- end }}
+---
+{{- if and .Values.dataProtection.enabled .Values.dataProtection.debug.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "app.name" . }}-debug
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  # Never runs on its own: this CronJob exists purely as a template for
+  # `kubectl create job --from=cronjob/{{ include "app.name" . }}-debug <job-name>`
+  # to spin up an on-demand pod with the same image/env/mounts as
+  # backup/restore/cleanup, to inspect or manage the restic repository by
+  # hand (e.g. `kubectl exec` in and run `restic snapshots`/`restic unlock`).
+  # `suspend: true` (not the schedule) is what actually prevents it from
+  # ever being triggered automatically.
+  schedule: "0 0 31 2 *"
+  suspend: true
+  successfulJobsHistoryLimit: {{ .Values.dataProtection.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.dataProtection.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "app.selectorLabels" . | nindent 12 }}
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ include "app.serviceAccountName" . }}
+          containers:
+            - name: debug
+              image: {{ .Values.dataProtection.image | quote }}
+              imagePullPolicy: {{ .Values.dataProtection.imagePullPolicy }}
+              command: ["sleep"]
+              args: ["infinity"]
+              {{- with (include "app.resticEnv" .) }}
+              env:
+{{ . | nindent 16 }}
+              {{- end }}
+              {{- with (include "app.resticEnvFrom" .) }}
+              envFrom:
+{{ . | nindent 16 }}
+              {{- end }}
+              {{- with (include "app.dataProtectionVolumeMounts" .) }}
+              volumeMounts:
+{{ . | nindent 16 }}
+              {{- end }}
+          {{- with (include "app.volumes" .) }}
+          volumes:
+{{ . | nindent 12 }}
+          {{- end }}
+{{- end }}
