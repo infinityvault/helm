@@ -61,6 +61,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Values.persistence.enabled }}
 - name: {{ .Values.persistence.volumeName }}
   mountPath: {{ .Values.persistence.mountPath }}
+  {{- with .Values.persistence.subPath }}
+  subPath: {{ . }}
+  {{- end }}
 {{- end }}
 {{- with .Values.app.volumeMounts }}
 {{ toYaml . }}
@@ -84,7 +87,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- else }}
 {{- if .Values.persistence.enabled }}
 - name: {{ .Values.persistence.volumeName }}
-  mountPath: {{ .Values.persistence.mountPath }}
+  # Always /data, independent of persistence.mountPath (which is wherever
+  # the app itself expects its data) - restic-backup's own default data
+  # directory is /data, so mounting it here too means RESTIC_BACKUP_DATA_DIR
+  # never needs to be set.
+  mountPath: /data
 {{- end }}
 {{- end }}
 {{- end -}}

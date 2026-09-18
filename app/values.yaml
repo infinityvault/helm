@@ -20,6 +20,11 @@ persistence:
   enabled: true
   volumeName: data
   mountPath: /data/db
+  # Mounted as a subPath of the volume (not its root) so the app's own
+  # files never collide with what restic-backup keeps alongside it in the
+  # same volume (e.g. the Postgres dump file) - see dataProtection, which
+  # always mounts the whole volume unsplit at /data.
+  subPath: data
   size: 5Gi
   accessModes:
     - ReadWriteOnce
@@ -137,7 +142,9 @@ dataProtection:
   repositorySecretName: ""
   env: []
   envFrom: []
-  # Leave empty to mount persistence.volumeName at persistence.mountPath.
+  # Leave empty to mount persistence.volumeName at /data - restic-backup's
+  # own default data directory, so RESTIC_BACKUP_DATA_DIR never needs to be
+  # set. Only set this to mount somewhere else instead.
   volumeMounts: []
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -151,7 +158,7 @@ dataProtection:
 
   restore:
     enabled: true
-    checkPath: "/data/db"
+    checkPath: "/data"
     # beforeTimestamp: "2024-01-01"
     notifications:
       enabled: true
