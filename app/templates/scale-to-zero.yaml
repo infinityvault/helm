@@ -36,4 +36,44 @@ spec:
       metadata:
         scalerAddress: {{ .Values.scaleToZero.scalerAddress | quote }}
         interceptorRoute: {{ include "app.name" . }}
+{{- if .Values.scaleToZero.dataStores.enabled }}
+{{- $appPods := printf "app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s" (include "app.name" .) .Release.Name }}
+{{- $dbJobPods := printf "app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s,app.kubernetes.io/component in (backup,debug)" (include "app.dataProtectionName" .) .Release.Name }}
+{{- range $store := list (dict "enabled" .Values.postgres.enabled "name" .Values.postgres.name "database" true) (dict "enabled" .Values.mysql.enabled "name" .Values.mysql.name "database" true) (dict "enabled" .Values.redis.enabled "name" .Values.redis.name "database" false) }}
+{{- if $store.enabled }}
+---
+# Runs {{ $store.name }} exactly while something uses it: counts
+# non-terminated pods matching each selector (KEDA excludes Succeeded/Failed
+# ones), active when either count is above 0.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ $store.name }}
+  labels:
+    {{- include "app.labels" $ | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: {{ $store.name }}
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  pollingInterval: {{ $.Values.scaleToZero.dataStores.pollingInterval }}
+  cooldownPeriod: {{ $.Values.scaleToZero.dataStores.cooldownPeriod }}
+  triggers:
+    - type: kubernetes-workload
+      metadata:
+        podSelector: {{ $appPods | quote }}
+        value: "1"
+    {{- if and $store.database $.Values.dataProtection.enabled }}
+    # Backups dump the database - backup/debug jobs wake it and wait for it
+    # (see app.dataProtectionWaitForInitContainers).
+    - type: kubernetes-workload
+      metadata:
+        podSelector: {{ $dbJobPods | quote }}
+        value: "1"
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}

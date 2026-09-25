@@ -116,6 +116,47 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end -}}
 
+{{/*
+Data protection job pods get their own labels - NOT app.selectorLabels,
+which would put them behind the app Service (and, with scaleToZero, make
+the interceptor forward requests to e.g. a running backup pod). The
+component label tells backup/debug (need the database) from cleanup
+(doesn't) - see the data store ScaledObjects in scale-to-zero.yaml.
+*/}}
+{{- define "app.dataProtectionName" -}}
+{{- printf "%s-data-protection" (include "app.name" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "app.dataProtectionSelectorLabels" -}}
+app.kubernetes.io/name: {{ include "app.dataProtectionName" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+With scaleToZero, postgres/mysql may be stopped when a backup/debug job
+starts - it wakes them (see scale-to-zero.yaml) and waits here until
+they're reachable. Without scaleToZero they're always running, so nothing
+to wait for.
+*/}}
+{{- define "app.dataProtectionWaitForInitContainers" -}}
+{{- if and .Values.scaleToZero.enabled .Values.scaleToZero.dataStores.enabled }}
+{{- range $store := list (dict "enabled" $.Values.postgres.enabled "name" $.Values.postgres.name "port" 5432) (dict "enabled" $.Values.mysql.enabled "name" $.Values.mysql.name "port" 3306) }}
+{{- if $store.enabled }}
+- name: wait-for-{{ $store.name }}
+  image: {{ $.Values.waitFor.image | quote }}
+  imagePullPolicy: {{ $.Values.waitFor.imagePullPolicy }}
+  command: ["sh", "-ec"]
+  args:
+    - |
+      until nc -z {{ $store.name }} {{ $store.port }}; do
+        echo "waiting for {{ $store.name }}"
+        sleep 2
+      done
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end -}}
+
 {{- define "app.resticEnv" -}}
 {{- with .Values.dataProtection.env }}
 {{ toYaml . }}

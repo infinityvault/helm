@@ -21,7 +21,9 @@ metadata:
   name: {{ .Values.redis.name }}
 spec:
   serviceName: {{ .Values.redis.name }}
+  {{- if not (and .Values.scaleToZero.enabled .Values.scaleToZero.dataStores.enabled) }}
   replicas: 1
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Values.redis.name }}

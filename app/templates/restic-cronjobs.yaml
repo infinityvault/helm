@@ -14,10 +14,15 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "app.selectorLabels" . | nindent 12 }}
+            {{- include "app.dataProtectionSelectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: backup
         spec:
           restartPolicy: OnFailure
           serviceAccountName: {{ include "app.serviceAccountName" . }}
+          {{- with (include "app.dataProtectionWaitForInitContainers" .) }}
+          initContainers:
+{{ . | nindent 12 }}
+          {{- end }}
           containers:
             - name: backup
               image: {{ .Values.dataProtection.image | quote }}
@@ -58,7 +63,8 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "app.selectorLabels" . | nindent 12 }}
+            {{- include "app.dataProtectionSelectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: cleanup
         spec:
           restartPolicy: OnFailure
           serviceAccountName: {{ include "app.serviceAccountName" . }}
@@ -103,10 +109,15 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "app.selectorLabels" . | nindent 12 }}
+            {{- include "app.dataProtectionSelectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: debug
         spec:
           restartPolicy: OnFailure
           serviceAccountName: {{ include "app.serviceAccountName" . }}
+          {{- with (include "app.dataProtectionWaitForInitContainers" .) }}
+          initContainers:
+{{ . | nindent 12 }}
+          {{- end }}
           containers:
             - name: debug
               image: {{ .Values.dataProtection.image | quote }}

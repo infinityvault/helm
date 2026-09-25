@@ -139,8 +139,8 @@ traefikIngress:
 # cluster, and Traefik with providers.kubernetesCRD.allowCrossNamespace:
 # while enabled, the IngressRoute sends traffic to the add-on's interceptor
 # (which holds requests during a cold start and counts them for scaling)
-# instead of straight to the app Service. Only the app workload scales -
-# postgres/mysql/redis keep running.
+# instead of straight to the app Service. postgres/mysql/redis are stopped
+# too while nothing uses them (see dataStores).
 scaleToZero:
   enabled: false
   # Seconds without requests before the workload is scaled down to zero
@@ -156,6 +156,17 @@ scaleToZero:
     service: keda-add-ons-http-interceptor-proxy
     port: 8080
   scalerAddress: keda-add-ons-http-external-scaler.infra-keda:9090
+  # Each enabled data store (postgres/mysql/redis) gets its own ScaledObject
+  # that runs it exactly while an app pod exists - and, for postgres/mysql,
+  # while a backup/debug job pod exists, so backups keep working while the
+  # app is asleep (those jobs wait for the database before starting).
+  dataStores:
+    enabled: true
+    # Seconds after the last such pod is gone before the data store stops.
+    cooldownPeriod: 60
+    # How often KEDA checks for those pods - bounds the extra delay a cold
+    # start spends waiting for the data store.
+    pollingInterval: 5
 
 dataProtection:
   enabled: false
