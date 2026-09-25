@@ -36,6 +36,10 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 {{- end -}}
 
+{{- define "app.workloadKind" -}}
+{{- if .Values.statefulSet.enabled -}}StatefulSet{{- else -}}Deployment{{- end -}}
+{{- end -}}
+
 {{- define "app.image" -}}
 {{- $workload := include "app.workload" . | fromYaml -}}
 {{- required "workload image is required" $workload.image -}}

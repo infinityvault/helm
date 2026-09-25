@@ -1,0 +1,39 @@
+{{- if .Values.scaleToZero.enabled }}
+{{- $domain := required "scaleToZero requires traefikIngress.domain (the interceptor routes on the Host header)" .Values.traefikIngress.domain }}
+apiVersion: http.keda.sh/v1beta1
+kind: InterceptorRoute
+metadata:
+  name: {{ include "app.name" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  target:
+    service: {{ include "app.name" . }}
+    port: {{ .Values.service.port }}
+  rules:
+    - hosts:
+        - {{ $domain | quote }}
+  scalingMetric:
+    concurrency:
+      targetValue: {{ .Values.scaleToZero.targetConcurrency }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "app.name" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: {{ include "app.workloadKind" . }}
+    name: {{ include "app.name" . }}
+  minReplicaCount: 0
+  maxReplicaCount: {{ .Values.scaleToZero.maxReplicas }}
+  cooldownPeriod: {{ .Values.scaleToZero.idleTimeout }}
+  triggers:
+    - type: external-push
+      metadata:
+        scalerAddress: {{ .Values.scaleToZero.scalerAddress | quote }}
+        interceptorRoute: {{ include "app.name" . }}
+{{- end }}

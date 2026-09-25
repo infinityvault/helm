@@ -7,7 +7,9 @@ metadata:
     {{- include "app.labels" . | nindent 4 }}
 spec:
   serviceName: {{ include "app.name" . }}
+  {{- if not .Values.scaleToZero.enabled }}
   replicas: {{ .Values.statefulSet.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "app.selectorLabels" . | nindent 6 }}

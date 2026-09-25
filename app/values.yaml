@@ -133,6 +133,30 @@ traefikIngress:
   annotations: {}
   tls: {}
 
+# Scale the app workload to zero when idle, and back up on the next request,
+# via the KEDA HTTP add-on (http.keda.sh/v1beta1 InterceptorRoute + a
+# keda.sh/v1alpha1 ScaledObject). Requires KEDA and the HTTP add-on in the
+# cluster, and Traefik with providers.kubernetesCRD.allowCrossNamespace:
+# while enabled, the IngressRoute sends traffic to the add-on's interceptor
+# (which holds requests during a cold start and counts them for scaling)
+# instead of straight to the app Service. Only the app workload scales -
+# postgres/mysql/redis keep running.
+scaleToZero:
+  enabled: false
+  # Seconds without requests before the workload is scaled down to zero
+  # (the ScaledObject's cooldownPeriod).
+  idleTimeout: 300
+  maxReplicas: 1
+  # In-flight requests per replica the add-on scales up on.
+  targetConcurrency: 100
+  # Where the HTTP add-on runs - defaults match its upstream chart installed
+  # as release "keda-add-ons-http" in namespace "infra-keda".
+  interceptor:
+    namespace: infra-keda
+    service: keda-add-ons-http-interceptor-proxy
+    port: 8080
+  scalerAddress: keda-add-ons-http-external-scaler.infra-keda:9090
+
 dataProtection:
   enabled: false
   image: "ghcr.io/infinityvault/restic-backup:0.1.5"

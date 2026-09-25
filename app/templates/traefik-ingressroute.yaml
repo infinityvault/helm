@@ -16,8 +16,17 @@ spec:
     - match: Host(`{{ .Values.traefikIngress.domain }}`)
       kind: Rule
       services:
+        {{- if .Values.scaleToZero.enabled }}
+        # Through the KEDA HTTP add-on's interceptor, which routes on the
+        # Host header (see scale-to-zero.yaml) - needs Traefik's
+        # allowCrossNamespace, since it lives in the add-on's namespace.
+        - name: {{ .Values.scaleToZero.interceptor.service }}
+          namespace: {{ .Values.scaleToZero.interceptor.namespace }}
+          port: {{ .Values.scaleToZero.interceptor.port }}
+        {{- else }}
         - name: {{ include "app.name" . }}
           port: {{ .Values.service.port }}
+        {{- end }}
   {{- with .Values.traefikIngress.tls }}
   tls:
     {{- toYaml . | nindent 4 }}
