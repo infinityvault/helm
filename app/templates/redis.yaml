@@ -41,6 +41,8 @@ spec:
           ports:
             - name: redis
               containerPort: 6379
+          {{- /* redis-cli exits 0 even on an error reply (e.g. LOADING while replaying the AOF), so check for the actual PONG. */}}
+          {{- include "app.dataStoreProbes" (dict "command" "redis-cli -h 127.0.0.1 -p 6379 ping | grep -q PONG") | nindent 10 }}
           volumeMounts:
             - name: data
               mountPath: /data

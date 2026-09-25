@@ -41,6 +41,8 @@ spec:
           ports:
             - name: mysql
               containerPort: 3306
+          {{- /* `ping` exits 0 whenever the server answers, even with "Access denied" - no credentials needed. mariadb-admin first: MariaDB images may no longer ship the mysqladmin name, MySQL images only have that. */}}
+          {{- include "app.dataStoreProbes" (dict "command" "if command -v mariadb-admin >/dev/null 2>&1; then mariadb-admin ping -h 127.0.0.1 --protocol=tcp --silent; else mysqladmin ping -h 127.0.0.1 --protocol=tcp --silent; fi") | nindent 10 }}
           env:
             - name: MYSQL_DATABASE
               value: {{ .Values.mysql.database.name | quote }}

@@ -157,6 +157,33 @@ to wait for.
 {{- end }}
 {{- end -}}
 
+{{/*
+Startup/readiness/liveness probes for a data store container, all running
+the same exec check (`command`, run via sh). Every check targets TCP on
+127.0.0.1, which the images' first-start init (initdb, MySQL/MariaDB
+bootstrap) doesn't listen on - so readiness only passes once the real
+server is up. The startup probe gives that init (or a long AOF load /
+upgrade) up to 5 minutes before liveness takes over.
+*/}}
+{{- define "app.dataStoreProbes" -}}
+{{- $exec := dict "exec" (dict "command" (list "sh" "-c" .command)) -}}
+startupProbe:
+  {{- toYaml $exec | nindent 2 }}
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 60
+readinessProbe:
+  {{- toYaml $exec | nindent 2 }}
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+livenessProbe:
+  {{- toYaml $exec | nindent 2 }}
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 6
+{{- end -}}
+
 {{- define "app.resticEnv" -}}
 {{- with .Values.dataProtection.env }}
 {{ toYaml . }}

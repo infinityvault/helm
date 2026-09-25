@@ -41,6 +41,8 @@ spec:
           ports:
             - name: postgres
               containerPort: 5432
+          {{- /* pg_isready only checks the server accepts connections (no auth); -U/-d just avoid "role does not exist" log noise. */}}
+          {{- include "app.dataStoreProbes" (dict "command" "pg_isready -h 127.0.0.1 -p 5432 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\"") | nindent 10 }}
           env:
             - name: POSTGRES_DB
               value: {{ .Values.postgres.database.name | quote }}
