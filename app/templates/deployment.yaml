@@ -6,6 +6,7 @@ metadata:
   labels:
     {{- include "app.labels" . | nindent 4 }}
 spec:
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   {{- if not .Values.scaleToZero.enabled }}
   replicas: {{ .Values.deployment.replicas }}
   {{- end }}

@@ -21,6 +21,7 @@ metadata:
   name: {{ .Values.mysql.name }}
 spec:
   serviceName: {{ .Values.mysql.name }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   {{- if not (and .Values.scaleToZero.enabled .Values.scaleToZero.dataStores.enabled) }}
   replicas: 1
   {{- end }}

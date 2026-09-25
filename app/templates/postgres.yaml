@@ -21,6 +21,7 @@ metadata:
   name: {{ .Values.postgres.name }}
 spec:
   serviceName: {{ .Values.postgres.name }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   {{- if not (and .Values.scaleToZero.enabled .Values.scaleToZero.dataStores.enabled) }}
   replicas: 1
   {{- end }}

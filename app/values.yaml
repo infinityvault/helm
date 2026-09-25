@@ -1,3 +1,10 @@
+# Old revisions kept per workload (the app Deployment/StatefulSet and the
+# postgres/mysql/redis StatefulSets): ReplicaSets for a Deployment,
+# ControllerRevisions for a StatefulSet. 0 keeps only the current one -
+# rollbacks go through ArgoCD (redeploy an earlier revision of the values),
+# not `kubectl rollout undo`.
+revisionHistoryLimit: 0
+
 app:
   name: "example"
   containerPort: 80
@@ -181,7 +188,7 @@ dataProtection:
   # own default data directory, so RESTIC_BACKUP_DATA_DIR never needs to be
   # set. Only set this to mount somewhere else instead.
   volumeMounts: []
-  successfulJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
 
   backup:
