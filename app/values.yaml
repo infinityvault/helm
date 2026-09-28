@@ -20,6 +20,28 @@ app:
   affinity: {}
   livenessProbe: {}
   readinessProbe: {}
+  # Holds off liveness/readiness until it passes - for apps whose first
+  # start (install/migrations) takes a while.
+  startupProbe: {}
+  # Additional (non-HTTP) ports, added to the app container and Service.
+  # With `entryPoint` set - a Traefik TCP/UDP entrypoint (the infra
+  # stack's ingress.entrypoints) - an IngressRouteTCP / IngressRouteUDP
+  # forwards that entrypoint to the port. Not combinable with scaleToZero
+  # (only HTTP requests can wake the app).
+  extraPorts: []
+  #  - name: relay            # port name, max 15 chars, lowercase
+  #    port: 21117
+  #    protocol: TCP          # or UDP
+  #    entryPoint: relay      # omit to only expose it inside the cluster
+  # Extra containers in the app pod, e.g. a background worker that needs
+  # the same (ReadWriteOnce) data volume - they can mount
+  # persistence.volumeName themselves.
+  extraContainers: []
+  # Kubernetes' legacy per-Service env vars (<SERVICE>_PORT=tcp://...,
+  # <SERVICE>_SERVICE_HOST, ...) - off, since they collide with apps that
+  # read their own prefix (e.g. a Service "listmonk" would inject
+  # LISTMONK_PORT into listmonk, which maps every LISTMONK_* var to config).
+  enableServiceLinks: false
   volumeMounts: []
   volumes: []
 

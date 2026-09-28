@@ -1,0 +1,37 @@
+{{- /*
+IngressRouteTCP / IngressRouteUDP for every app.extraPorts entry with an
+entryPoint - plain forwarding (no TLS termination, HostSNI(`*`) for TCP),
+since the entrypoint itself is dedicated to this port.
+*/}}
+{{- $root := . }}
+{{- range .Values.app.extraPorts }}
+{{- if .entryPoint }}
+{{- if $root.Values.scaleToZero.enabled }}
+{{- fail (printf "app.extraPorts %q routes entrypoint %q, which scaleToZero can't wake the app for - disable one of them" .name .entryPoint) }}
+{{- end }}
+---
+apiVersion: traefik.io/v1alpha1
+{{- if eq (default "TCP" .protocol | upper) "UDP" }}
+kind: IngressRouteUDP
+{{- else }}
+kind: IngressRouteTCP
+{{- end }}
+metadata:
+  name: {{ include "app.name" $root }}-{{ .name }}
+  labels:
+    {{- include "app.labels" $root | nindent 4 }}
+spec:
+  entryPoints:
+    - {{ .entryPoint }}
+  routes:
+    {{- if eq (default "TCP" .protocol | upper) "UDP" }}
+    - services:
+    {{- else }}
+    - match: HostSNI(`*`)
+      services:
+    {{- end }}
+        - name: {{ include "app.name" $root }}
+          # By name - a TCP and a UDP port may share the same number.
+          port: {{ .name }}
+{{- end }}
+{{- end }}

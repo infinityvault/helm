@@ -203,6 +203,7 @@ livenessProbe:
 {{- define "app.podSpec" -}}
 {{- $workload := include "app.workload" . | fromYaml -}}
 serviceAccountName: {{ include "app.serviceAccountName" . }}
+enableServiceLinks: {{ .Values.app.enableServiceLinks }}
 {{- with .Values.app.imagePullSecrets }}
 imagePullSecrets:
 {{ toYaml . | nindent 2 }}
@@ -256,6 +257,11 @@ containers:
       - name: http
         containerPort: {{ .Values.app.containerPort }}
         protocol: TCP
+      {{- range .Values.app.extraPorts }}
+      - name: {{ .name }}
+        containerPort: {{ .port }}
+        protocol: {{ default "TCP" .protocol | upper }}
+      {{- end }}
     {{- with $workload.env }}
     env:
 {{ toYaml . | nindent 6 }}
@@ -284,6 +290,13 @@ containers:
     readinessProbe:
 {{ toYaml . | nindent 6 }}
     {{- end }}
+    {{- with .Values.app.startupProbe }}
+    startupProbe:
+{{ toYaml . | nindent 6 }}
+    {{- end }}
+{{- with .Values.app.extraContainers }}
+{{- toYaml . | nindent 2 }}
+{{- end }}
 {{- with .Values.app.nodeSelector }}
 nodeSelector:
 {{ toYaml . | nindent 2 }}
