@@ -185,6 +185,8 @@ livenessProbe:
 {{- end -}}
 
 {{- define "app.resticEnv" -}}
+- name: RESTIC_HOST
+  value: {{ .Values.dataProtection.host | quote }}
 {{- with .Values.dataProtection.env }}
 {{ toYaml . }}
 {{- end }}

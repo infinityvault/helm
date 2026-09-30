@@ -41,3 +41,6 @@ When enabled, `ghcr.io/infinityvault/restic-backup` is used in three places:
 
 Set `dataProtection.repositorySecretName`, `dataProtection.env`, or
 `dataProtection.envFrom` to provide restic repository credentials.
+
+All of them use the restic host `dataProtection.host` (`RESTIC_HOST`, default `kubernetes`)
+instead of their pod names, so all snapshots form one group for restore and cleanup.

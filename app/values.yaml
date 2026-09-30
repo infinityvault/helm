@@ -201,6 +201,9 @@ dataProtection:
   enabled: false
   image: "ghcr.io/infinityvault/restic-backup:0.1.5"
   imagePullPolicy: IfNotPresent
+  # restic host (RESTIC_HOST) of all data protection containers - instead of
+  # their pod names, so snapshots form one group for restore and cleanup.
+  host: kubernetes
   # repositorySecretName should contain all restic-backup environment variables
   # such as RESTIC_REPOSITORY and RESTIC_PASSWORD.
   repositorySecretName: ""
@@ -215,7 +218,8 @@ dataProtection:
 
   backup:
     enabled: true
-    schedule: "0 2 * * *"
+    # Hourly, on the hour.
+    schedule: "0 * * * *"
     notifications:
       enabled: true
       mode: "on_failure"
@@ -230,7 +234,9 @@ dataProtection:
 
   cleanup:
     enabled: true
-    schedule: "0 3 * * *"
+    # Nightly, 01:30 - at :30 so it doesn't start together with an hourly
+    # backup (prune takes an exclusive restic lock).
+    schedule: "30 1 * * *"
     keepDaily: 7
     keepWeekly: 4
     # keepHourly: 24
