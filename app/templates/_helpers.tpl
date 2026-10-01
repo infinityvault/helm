@@ -214,7 +214,7 @@ imagePullSecrets:
 securityContext:
 {{ toYaml . | nindent 2 }}
 {{- end }}
-{{- if or $workload.waitFor (and .Values.dataProtection.enabled .Values.dataProtection.restore.enabled) }}
+{{- if or $workload.waitFor (and .Values.dataProtection.enabled .Values.dataProtection.restore.enabled) .Values.app.initContainers }}
 initContainers:
 {{ include "app.waitForInitContainers" . | nindent 2 }}
 {{- if and .Values.dataProtection.enabled .Values.dataProtection.restore.enabled }}
@@ -241,6 +241,9 @@ initContainers:
     volumeMounts:
 {{ . | nindent 6 }}
     {{- end }}
+{{- end }}
+{{- with .Values.app.initContainers }}
+{{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}
 containers:

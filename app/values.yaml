@@ -33,6 +33,9 @@ app:
   #    port: 21117
   #    protocol: TCP          # or UDP
   #    entryPoint: relay      # omit to only expose it inside the cluster
+  # Init containers of the app pod, run after waitFor and the restore -
+  # e.g. to fix ownership of the data volume.
+  initContainers: []
   # Extra containers in the app pod, e.g. a background worker that needs
   # the same (ReadWriteOnce) data volume - they can mount
   # persistence.volumeName themselves.
