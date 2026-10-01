@@ -38,6 +38,10 @@ spec:
       containers:
         - name: mysql
           image: {{ .Values.mysql.image | quote }}
+          {{- with .Values.mysql.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: mysql
               containerPort: 3306

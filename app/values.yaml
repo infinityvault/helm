@@ -140,6 +140,8 @@ mysql:
   enabled: false
   name: "mysql"
   image: "mysql:8"
+  # Server options, e.g. ["--collation-server=utf8mb4_unicode_ci"].
+  args: []
   volumeSize: "5Gi"
   database:
     name: "example"
