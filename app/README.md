@@ -45,7 +45,8 @@ the values. Requires CloudNativePG >= 1.30.
 
 When enabled, `ghcr.io/infinityvault/restic-backup` is used in three places:
 
-- restore init container on the app pod, skipped when `dataProtection.restore.checkPath` is not empty
+- restore init container on the app pod running `restic-backup restore` - it skips the data if
+  the data directory isn't empty and the database if it isn't
 - backup CronJob running `restic-backup backup`
 - cleanup CronJob running `restic-backup cleanup` with the configured retention flags
 

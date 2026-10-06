@@ -221,14 +221,14 @@ initContainers:
   - name: restic-restore
     image: {{ .Values.dataProtection.image | quote }}
     imagePullPolicy: {{ .Values.dataProtection.imagePullPolicy }}
-    command: ["sh", "-ec"]
+    # Skips the data if the data directory isn't empty, the database if it isn't.
+    command: ["restic-backup"]
     args:
-      - |
-        if [ ! -d "{{ .Values.dataProtection.restore.checkPath }}" ] || [ -z "$(ls -A "{{ .Values.dataProtection.restore.checkPath }}" 2>/dev/null)" ]; then
-          restic-backup restore{{- with .Values.dataProtection.restore.beforeTimestamp }} --before "{{ . }}"{{- end }}
-        else
-          echo "restore skipped, {{ .Values.dataProtection.restore.checkPath }} is not empty"
-        fi
+      - restore
+      {{- with .Values.dataProtection.restore.beforeTimestamp }}
+      - --before
+      - {{ . | quote }}
+      {{- end }}
     {{- with (include "app.resticEnv" .) }}
     env:
 {{ . | nindent 6 }}

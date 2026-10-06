@@ -256,7 +256,6 @@ dataProtection:
 
   restore:
     enabled: true
-    checkPath: "/data"
     # beforeTimestamp: "2024-01-01"
     notifications:
       enabled: true
