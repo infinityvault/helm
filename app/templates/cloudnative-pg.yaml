@@ -1,0 +1,63 @@
+{{- /*
+A database in a shared CloudNativePG Cluster (e.g. the infra stack's) instead of
+the chart's own postgres: the owner role and the database are declared in the
+cluster's namespace, the owner's password Secret has to exist there already.
+An ExternalName Service gives the app (and waitFor/backups) the same "postgres"
+host as the chart's own postgres.
+*/}}
+{{- if .Values.cloudnativePg.enabled }}
+{{- if .Values.postgres.enabled }}
+{{- fail "Only one of postgres.enabled or cloudnativePg.enabled can be true" }}
+{{- end }}
+{{- $cnpg := .Values.cloudnativePg }}
+{{- $name := default .Release.Namespace $cnpg.resourceName }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $cnpg.serviceName }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ printf "%s-rw.%s.svc.cluster.local" $cnpg.cluster.name $cnpg.cluster.namespace }}
+  ports:
+    - name: postgres
+      port: 5432
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: {{ $name }}
+  namespace: {{ $cnpg.cluster.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  cluster:
+    name: {{ $cnpg.cluster.name }}
+  name: {{ required "cloudnativePg.database.owner is required" $cnpg.database.owner | quote }}
+  login: true
+  passwordSecret:
+    name: {{ required "cloudnativePg.database.ownerSecretName is required" $cnpg.database.ownerSecretName | quote }}
+  databaseRoleReclaimPolicy: {{ $cnpg.reclaimPolicy }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: {{ $name }}
+  namespace: {{ $cnpg.cluster.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  cluster:
+    name: {{ $cnpg.cluster.name }}
+  name: {{ required "cloudnativePg.database.name is required" $cnpg.database.name | quote }}
+  owner: {{ $cnpg.database.owner | quote }}
+  databaseReclaimPolicy: {{ $cnpg.reclaimPolicy }}
+  {{- with $cnpg.database.extensions }}
+  extensions:
+    {{- range . }}
+    - name: {{ . | quote }}
+      ensure: present
+    {{- end }}
+  {{- end }}
+{{- end }}

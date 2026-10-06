@@ -31,6 +31,16 @@ The volume is mounted into the app and restic containers at `persistence.mountPa
 
 Use `app.volumeMounts` and `app.volumes` for additional custom mounts.
 
+## CloudNativePG
+
+`cloudnativePg.enabled` uses a database in a shared CloudNativePG `Cluster` instead of the
+chart's own `postgres`: the chart declares the owner role (`DatabaseRole`) and the
+`Database` in the cluster's namespace, and an `ExternalName` Service `postgres` in the
+release namespace, so apps, `waitFor` and backups connect to `postgres:5432` as before. The
+owner's `kubernetes.io/basic-auth` Secret (`cloudnativePg.database.ownerSecretName`) has to
+exist in the cluster's namespace - it's not part of the chart, to keep the password out of
+the values. Requires CloudNativePG >= 1.30.
+
 ## Data Protection
 
 When enabled, `ghcr.io/infinityvault/restic-backup` is used in three places:

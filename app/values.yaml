@@ -139,6 +139,31 @@ postgres:
     # DATABASE_USERNAME
     # DATABASE_PASSWORD
 
+# A database (and its owner role) in a shared CloudNativePG Cluster instead of
+# the chart's own postgres - see templates/cloudnative-pg.yaml. Requires the
+# CloudNativePG operator (>= 1.30, DatabaseRole) and an ArgoCD project allowing
+# the cluster's namespace.
+cloudnativePg:
+  enabled: false
+  cluster:
+    name: "postgres"
+    namespace: "infra-cloudnative-pg"
+  # Name of the DatabaseRole/Database resources in the cluster's namespace -
+  # must be unique there. Default: the release namespace.
+  resourceName: ""
+  # ExternalName Service in the release namespace, the apps' database host.
+  serviceName: "postgres"
+  # retain: the role and database outlive the resources (and the app).
+  reclaimPolicy: "retain"
+  database:
+    name: "example"
+    owner: "example"
+    # kubernetes.io/basic-auth Secret (username, password) of the owner, in the
+    # cluster's namespace.
+    ownerSecretName: ""
+    # Created by the operator (superuser), e.g. ["vector"].
+    extensions: []
+
 mysql:
   enabled: false
   name: "mysql"
