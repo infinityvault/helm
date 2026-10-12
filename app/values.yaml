@@ -229,7 +229,7 @@ scaleToZero:
 
 dataProtection:
   enabled: false
-  image: "ghcr.io/infinityvault/restic-backup:0.1.5"
+  image: "ghcr.io/infinityvault/restic-backup:0.1.6"
   imagePullPolicy: IfNotPresent
   # restic host (RESTIC_HOST) of all data protection containers - instead of
   # their pod names, so snapshots form one group for restore and cleanup.
